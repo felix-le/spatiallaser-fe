@@ -1,6 +1,4 @@
-import MapComponent from "./MapComponent";
 import Mapbox from "./Mapbox";
-import { EXAMPLE_DATA } from "./data";
 export default function App() {
   return (
     <>

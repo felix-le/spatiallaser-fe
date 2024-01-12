@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import mapboxgl, { GeoJSONSourceRaw } from "mapbox-gl";
-import { EXAMPLE_DATA } from "./data";
 
 interface SpatialObject {
   type: string;
