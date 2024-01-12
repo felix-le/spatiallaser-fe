@@ -1,13 +1,8 @@
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
-import Map, { Source, Layer, LayerProps } from "react-map-gl";
-import {
-  clusterLayer,
-  clusterCountLayer,
-  unclusteredPointLayer,
-  unclusteredLabelLayer,
-} from "./layers";
-
+import Map, { Source, Layer, LayerProps, Marker } from "react-map-gl";
+import Pin from "./pin.png";
+import "mapbox-gl/dist/mapbox-gl.css";
 export const dataLayer: LayerProps = {
   id: "data",
   type: "fill",
@@ -18,43 +13,17 @@ export const dataLayer: LayerProps = {
 };
 
 export const dataLayer1: LayerProps = {
-  id: "clusters",
-  type: "circle",
-  source: "locations",
-  filter: ["has", "point_count"],
+  id: "outline",
+  type: "line",
   paint: {
-    "circle-color": [
-      "step",
-      ["get", "point_count"],
-      "#F38B00",
-      100,
-      "#f1f075",
-      750,
-      "#f28cb1",
-    ],
-    "circle-radius": ["step", ["get", "point_count"], 20, 100, 30, 750, 40],
+    "line-color": "#000",
+    "line-width": 3,
   },
-};
-
-const onClick = (event: any) => {
-  // const feature = event;
-  // console.log('🚀 ~ file: Mapbox.js:27 ~ onClick ~ event', event);
-  // const mapboxSource = mapRef.current.getSource('locations');
-  // mapboxSource.getClusterExpansionZoom(clusterId, (err, zoom) => {
-  //   if (err) {
-  //     return;
-  //   }
-  //   mapRef.current.easeTo({
-  //     center: feature?.geometry.coordinates,
-  //     zoom,
-  //     duration: 500,
-  //   });
-  // });
 };
 
 const Mapbox = () => {
   const [allData, setAllData] = useState<any>(null);
-  const mapRef = useRef(null);
+  // 33.19790511065013, -96.63958405272592
   useEffect(() => {
     /* global fetch */
     fetch("http://localhost:5555")
@@ -73,39 +42,32 @@ const Mapbox = () => {
       })),
     };
 
-    console.log({ geojson });
-
     return geojson;
   }, [allData]);
 
   return (
     <Map
       initialViewState={{
-        latitude: 33.3689369320978,
-        longitude: -96.4426961542357,
+        latitude: 33.19790511065013,
+        longitude: -96.63958405272592,
         zoom: 10,
       }}
-      mapStyle="mapbox://styles/mapbox/dark-v9"
+      mapStyle="mapbox://styles/mapbox/light-v9"
       mapboxAccessToken={process.env.REACT_APP_MAPBOX_TOKEN!}
-      interactiveLayerIds={[clusterLayer.id]}
-      style={{ width: "100%", height: 1000 }}
-      onClick={(event) => onClick(event)}
-      ref={mapRef}
-      cursor="pointer"
+      interactiveLayerIds={["data"]}
+      style={{ width: "100%", height: 1400 }}
     >
-      <Source
-        type="geojson"
-        data={data as any}
-        id="locations"
-        cluster={false}
-        clusterMaxZoom={14}
-        clusterRadius={50}
-      >
-        <Layer {...clusterLayer} />
-        <Layer {...clusterCountLayer} />
-        <Layer {...unclusteredPointLayer} />
-        <Layer {...unclusteredLabelLayer} />
+      <Source type="geojson" data={data as any}>
+        <Layer {...dataLayer} />
       </Source>
+      <Marker
+        longitude={-96.63958405272592}
+        latitude={33.19790511065013}
+        // pitchAlignment="map"
+        // anchor="center"
+      >
+        <img src={Pin} height={10} width={10} />
+      </Marker>
     </Map>
   );
 };
