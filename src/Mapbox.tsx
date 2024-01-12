@@ -109,7 +109,9 @@ const Mapbox: React.FC = () => {
         <div style={{ position: "absolute", bottom: 200, left: 100 }}>
           <ScaleControl maxWidth={100} unit={"metric"} />
         </div>
-
+        <Marker longitude={marker.longitude} latitude={marker.latitude}>
+          <img src={Pin} height={10} width={10} alt="marker" />
+        </Marker>
         <Source id="my-data" type="geojson" data={circle}>
           <Layer
             id="point-90-hi"
