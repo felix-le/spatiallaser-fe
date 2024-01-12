@@ -50,7 +50,7 @@ const Mapbox: React.FC = () => {
   var circle = turf.circle(center, radius, options);
 
   useEffect(() => {
-    fetch("http://localhost:5555")
+    fetch(`${process.env.REACT_APP_BE_API}`)
       .then((resp) => {
         const contentType = resp.headers.get("content-type");
         if (contentType && contentType.includes("json")) {
