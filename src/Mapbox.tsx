@@ -32,7 +32,7 @@ const defaultMarker = {
 
 const Mapbox: React.FC = () => {
   const [allData, setAllData] = useState<SpatialObject[] | null>(null);
-
+  const [marker, setMarker] = useState(defaultMarker);
   useEffect(() => {
     fetch("http://localhost:5555")
       .then((resp) => {
@@ -56,7 +56,7 @@ const Mapbox: React.FC = () => {
         features: allData.map((item) => ({
           type: "Feature",
           geometry: JSON.parse(item.spatialobj),
-          properties: {}, // Add properties based on your data structure
+          properties: {}, // Add properties based on the data structure
         })),
       };
       return geojson;
@@ -68,7 +68,10 @@ const Mapbox: React.FC = () => {
 
   const handleMapClick = (e: any) => {
     console.log(e.lngLat);
-    // setMarker({lng, lat});
+    if (!e.lngLat) return;
+    if (e.lngLat.lng && e.lngLat.lat) {
+      setMarker({ longitude: e.lngLat.lng, latitude: e.lngLat.lat });
+    }
   };
 
   return (
@@ -86,10 +89,7 @@ const Mapbox: React.FC = () => {
     >
       <Source type="geojson" data={data as any}>
         <Layer {...dataLayer} />
-        <Marker
-          longitude={defaultMarker.longitude}
-          latitude={defaultMarker.latitude}
-        >
+        <Marker longitude={marker.longitude} latitude={marker.latitude}>
           <img src={Pin} height={10} width={10} alt="marker" />
         </Marker>
       </Source>
