@@ -72,8 +72,7 @@ type: "Feature",
 geometry: JSON.parse(item?.spatialobj),
 })),
 };
-
-    console.log({ geojson });
+console.log({ geojson });
 
     return geojson;
 
@@ -93,6 +92,7 @@ style={{ width: "100%", height: 1000 }}
 onClick={(event) => onClick(event)}
 ref={mapRef}
 cursor="pointer" >
+
 <Source
 type="geojson"
 data={data as any}
