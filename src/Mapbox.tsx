@@ -1,8 +1,13 @@
-import React, { useEffect, useMemo, useState } from "react";
-import Map, { Source, Layer, LayerProps, Marker } from "react-map-gl";
+import React, { useEffect, useMemo, useState, useRef } from "react";
+import Map, {
+  Source,
+  Layer,
+  LayerProps,
+  Marker,
+  ScaleControl,
+} from "react-map-gl";
 import Pin from "./pin.png";
-import "mapbox-gl/dist/mapbox-gl.css";
-
+import * as turf from "@turf/turf";
 interface SpatialObject {
   spatialobj: string;
 }
@@ -33,6 +38,17 @@ const defaultMarker = {
 const Mapbox: React.FC = () => {
   const [allData, setAllData] = useState<SpatialObject[] | null>(null);
   const [marker, setMarker] = useState(defaultMarker);
+  const mapRef = useRef(null);
+
+  var radius = 5;
+  var center = [marker.longitude, marker.latitude];
+  var options = {
+    steps: 100,
+    units: "kilometers" as turf.Units,
+    properties: { foo: "bar" },
+  };
+  var circle = turf.circle(center, radius, options);
+
   useEffect(() => {
     fetch("http://localhost:5555")
       .then((resp) => {
@@ -81,6 +97,7 @@ const Mapbox: React.FC = () => {
         longitude: -96.63958405272592,
         zoom: 10,
       }}
+      ref={mapRef}
       mapStyle="mapbox://styles/mapbox/light-v9"
       mapboxAccessToken={process.env.REACT_APP_MAPBOX_TOKEN!}
       interactiveLayerIds={["data"]}
@@ -89,9 +106,21 @@ const Mapbox: React.FC = () => {
     >
       <Source type="geojson" data={data as any}>
         <Layer {...dataLayer} />
-        <Marker longitude={marker.longitude} latitude={marker.latitude}>
-          <img src={Pin} height={10} width={10} alt="marker" />
-        </Marker>
+        <div style={{ position: "absolute", bottom: 200, left: 100 }}>
+          <ScaleControl maxWidth={100} unit={"metric"} />
+        </div>
+
+        <Source id="my-data" type="geojson" data={circle}>
+          <Layer
+            id="point-90-hi"
+            type="fill"
+            paint={{
+              "fill-color": "#088",
+              "fill-opacity": 0.4,
+              "fill-outline-color": "yellow",
+            }}
+          />
+        </Source>
       </Source>
     </Map>
   );

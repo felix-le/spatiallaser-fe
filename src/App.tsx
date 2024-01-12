@@ -1,5 +1,8 @@
 import Mapbox from "./Mapbox";
-export default function App() {
+import "mapbox-gl/dist/mapbox-gl.css";
+import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
+
+const App: React.FC = () => {
   return (
     <>
       <h1 className="text-3xl font-bold underline">Hello world!</h1>
@@ -7,4 +10,6 @@ export default function App() {
       <Mapbox />
     </>
   );
-}
+};
+
+export default App;
