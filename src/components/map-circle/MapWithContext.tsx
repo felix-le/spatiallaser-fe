@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { getMapApi, getAreaCentroidInsideCircle, getAreaInsideCircle } from '../../api/get-db'; // import the api
 import useRequest from '../../hooks/useRequest'; // import the hook
-import { IMapDataContext } from './interface'; // import the interface
+import { IMapDataContext } from './interfaces'; // import the interface
 
 const initMapContext: IMapDataContext = {
   dataMap: [], // Add the dataMap property
