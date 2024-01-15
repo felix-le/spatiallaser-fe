@@ -13,7 +13,7 @@ export async function getAreaCentroidInsideCircle(lng: number, lat: number, radi
 }
 
 export async function getAreaInsideCircle(lng: number, lat: number, radius: number) {
-  return get(`/area-centroid-inside?lng=${lng}&lat=${lat}&radius=${radius}`);
+  return get(`/area-inside-circle?lng=${lng}&lat=${lat}&radius=${radius}`);
 }
 
 export async function getAreaCircle(lng: number, lat: number, radius: number) {

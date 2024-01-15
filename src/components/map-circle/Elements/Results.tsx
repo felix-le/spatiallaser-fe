@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Switch } from '@headlessui/react';
-import { ISpatialObject } from '../interfaces';
 function classNames(...classes: (string | boolean)[]) {
   return classes.filter(Boolean).join(' ');
 }
@@ -9,28 +8,20 @@ interface IProps {
   isProportionMethod: boolean;
   // this is react useState hook
   setIsProportionMethod: React.Dispatch<React.SetStateAction<boolean>>;
-  data?: ISpatialObject[];
+  data?: number;
 }
 
 const Results: React.FC<IProps> = ({ isProportionMethod, setIsProportionMethod, data }) => {
-  // const [enabled, setEnabled] = useState(false);
+  const result = data;
 
-  const sum = data?.reduce(
-    (acc, obj) => {
-      acc.income += obj.income;
-      acc.population += obj.population;
-      return acc;
-    },
-    { income: 0, population: 0 }
-  );
   return (
-    <div className='flex'>
+    <div className='flex  justify-center items-center'>
       <Switch
         checked={isProportionMethod}
         onChange={setIsProportionMethod}
         className={classNames(
           isProportionMethod ? 'bg-indigo-600' : 'bg-gray-200',
-          'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2'
+          'mr-4 relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2'
         )}
       >
         <span className='sr-only'>Use setting</span>
@@ -42,24 +33,12 @@ const Results: React.FC<IProps> = ({ isProportionMethod, setIsProportionMethod, 
           )}
         />
       </Switch>
-
-      <div>
-        <h3>
+      <div className=''>
+        <h3 className='mb-5'>
           Interpolation with Tract level Census Data -{' '}
-          {isProportionMethod ? <p>Areal proportion method</p> : <p>Centroid Based method</p>}
+          {isProportionMethod ? 'Areal proportion method' : 'Centroid Based method'}
         </h3>
-
-        {sum?.population && (
-          <p>
-            <strong>Sum Population</strong>:{sum?.population}
-          </p>
-        )}
-
-        {sum?.income && (
-          <p>
-            <strong>Average income</strong>:{sum?.income / (data?.length ?? 0)}
-          </p>
-        )}
+        {isProportionMethod ? <p>Average income:{result}</p> : <p>Total population: {result}</p>}
       </div>
     </div>
   );

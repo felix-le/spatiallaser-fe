@@ -1,8 +1,9 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import Map, { Layer, Marker, ScaleControl, Source } from 'react-map-gl';
 import Pin from '../../images/pin.png';
+
 // Components
-import { dataLayerHighLight, dataLayer } from './Elements/layers';
+import { dataLayerHighLight } from './Elements/layers';
 import { MapContext } from './MapWithContext';
 import { ISpatialObject } from './interfaces';
 import Results from './Elements/Results';
@@ -30,8 +31,8 @@ const Mapbox: React.FC = () => {
   const [highlight, setHighlight] = useState<ISpatialObject[]>([]);
   const [circle, setCircle] = useState<any>(null);
   const mapRef = useRef(null);
-  const [isProportionMethod, setIsProportionMethod] = useState<boolean>(true);
-
+  const [isProportionMethod, setIsProportionMethod] = useState<boolean>(false);
+  const [avgIncome, setAvgIncome] = useState<number>(0);
   const radius = 10;
 
   const data = useMemo(() => {
@@ -52,16 +53,14 @@ const Mapbox: React.FC = () => {
     }
   }, [dataMap]);
 
+  const getAvgIncome = async (lng: number, lat: number) => {
+    const { data } = await fetchInsideCircle(lng, lat, radius / 100);
+    setAvgIncome(data[0]?.avg_income);
+  };
+
   const getHighLight = async (lng: number, lat: number) => {
-    if (isProportionMethod) {
-      const { data } = await fetchInsideCircle(lng, lat, radius / 100);
-      setHighlight(data);
-      return;
-    }
-    if (!isProportionMethod) {
-      const { data } = await fetchCentroid(lng, lat, radius / 100);
-      setHighlight(data);
-    }
+    const { data } = await fetchCentroid(lng, lat, radius / 100);
+    setHighlight(data);
   };
 
   const getCircle = async (lng: number, lat: number) => {
@@ -71,11 +70,14 @@ const Mapbox: React.FC = () => {
   };
 
   useEffect(() => {
+    getAvgIncome(defaultMarker.longitude, defaultMarker.latitude);
     getHighLight(defaultMarker.longitude, defaultMarker.latitude);
     getCircle(defaultMarker.longitude, defaultMarker.latitude);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleMapClick = async (e: any) => {
+    getAvgIncome(e.lngLat.lng, e.lngLat.lat);
     getHighLight(e.lngLat.lng, e.lngLat.lat);
     getCircle(e.lngLat.lng, e.lngLat.lat);
   };
@@ -126,9 +128,8 @@ const Mapbox: React.FC = () => {
       return newObj;
     }
   });
-  console.log(highlight);
   return (
-    <>
+    <div className='h-full'>
       <Map
         initialViewState={{
           latitude: defaultMarker.latitude,
@@ -139,7 +140,7 @@ const Mapbox: React.FC = () => {
         mapStyle='mapbox://styles/mapbox/light-v9'
         mapboxAccessToken={process.env.REACT_APP_MAPBOX_TOKEN!}
         interactiveLayerIds={['data']}
-        style={{ width: '100%', height: 1400 }}
+        style={{ width: '100%', height: 800 }}
         // remove the preventStyleDiffing prop
         styleDiffing={false}
         onClick={(e) => handleMapClick(e)}
@@ -157,23 +158,21 @@ const Mapbox: React.FC = () => {
           </div>
 
           {/* Centroid */}
-          {displayData?.map((item: any) => {
-            return (
-              <Marker
-                key={item.centroid.longitude}
-                longitude={item.centroid.longitude}
-                // latitude={JSON.parse(item?.centroid)?.coordinates?.[1]}
-                latitude={item.centroid.latitude}
-              >
-                <img
-                  src={Pin}
-                  height={10}
-                  width={10}
-                  alt='marker'
-                />
-              </Marker>
-            );
-          })}
+          {displayData?.map((item: any) => (
+            <Marker
+              key={item.centroid.longitude}
+              longitude={item.centroid.longitude}
+              // latitude={JSON.parse(item?.centroid)?.coordinates?.[1]}
+              latitude={item.centroid.latitude}
+            >
+              <img
+                src={Pin}
+                height={10}
+                width={10}
+                alt='marker'
+              />
+            </Marker>
+          ))}
           <Source
             id='my-data'
             type='geojson'
@@ -212,14 +211,16 @@ const Mapbox: React.FC = () => {
           </Source>
         )}
       </Map>
-      <div className='container'>
-        <Results
-          isProportionMethod={isProportionMethod}
-          setIsProportionMethod={setIsProportionMethod}
-          data={highlight}
-        />
+      <div className='mt-6'>
+        <div className='container'>
+          <Results
+            isProportionMethod={isProportionMethod}
+            setIsProportionMethod={setIsProportionMethod}
+            data={!isProportionMethod ? highlight.reduce((acc, current) => acc + current.population, 0) : avgIncome}
+          />
+        </div>
       </div>
-    </>
+    </div>
   );
 };
 
