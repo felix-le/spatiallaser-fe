@@ -1,12 +1,11 @@
-import React, { useEffect, useMemo, useState, useRef, useContext } from 'react';
-import Map, { Source, Layer, LayerProps, Marker, ScaleControl } from 'react-map-gl';
-import * as turf from '@turf/turf';
-
-// Components
-import { dataLayer, dataLayer1 } from './Elements/layers';
-import { ISpatialObject, IDataPoint } from './interfaces';
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import Map, { Layer, Marker, ScaleControl, Source } from 'react-map-gl';
 import Pin from '../../images/pin.png';
+// Components
+import { dataLayerHighLight, dataLayer } from './Elements/layers';
 import { MapContext } from './MapWithContext';
+import { ISpatialObject } from './interfaces';
+import Results from './Elements/Results';
 
 const defaultMarker = {
   longitude: -96.63958405272592,
@@ -27,34 +26,13 @@ export function modifyArray(array: ISpatialObject[]): void {
 }
 
 const Mapbox: React.FC = () => {
-  const { dataMap } = useContext(MapContext);
-
-  // const [allData, setAllData] = useState<any>(dataMap)
-  const [marker, setMarker] = useState(defaultMarker);
+  const { dataMap, fetchInsideCircle, fetchCircle, fetchCentroid } = useContext(MapContext);
+  const [highlight, setHighlight] = useState<ISpatialObject[]>([]);
+  const [circle, setCircle] = useState<any>(null);
   const mapRef = useRef(null);
+  const [isProportionMethod, setIsProportionMethod] = useState<boolean>(true);
 
-  var radius = 5;
-  var center = [marker.longitude, marker.latitude];
-  var options = {
-    steps: 100,
-    units: 'kilometers' as turf.Units,
-    properties: { foo: 'bar' }
-  };
-  var circle = turf.circle(center, radius, options);
-
-  // useEffect(() => {
-  //   fetch(`${process.env.REACT_APP_BE_API_DEMO}`)
-  //     .then((resp) => {
-  //       const contentType = resp.headers.get('content-type')
-  //       if (contentType && contentType.includes('json')) {
-  //         return resp.json() as Promise<ISpatialObject[]>
-  //       } else {
-  //         throw new Error('Response is not in JSON format')
-  //       }
-  //     })
-  //     .then((json) => setAllData(json))
-  //     .catch((err) => console.error('Could not load data', err))
-  // }, [])
+  const radius = 10;
 
   const data = useMemo(() => {
     try {
@@ -64,8 +42,7 @@ const Mapbox: React.FC = () => {
         type: 'FeatureCollection',
         features: dataMap.map((item: { geometry: string }) => ({
           type: 'Feature',
-          geometry: JSON.parse(item.geometry),
-          properties: {} // Add properties based on the data structure
+          geometry: JSON.parse(item.geometry)
         }))
       };
       return geojson;
@@ -75,94 +52,174 @@ const Mapbox: React.FC = () => {
     }
   }, [dataMap]);
 
-  const handleMapClick = (e: any) => {
-    console.log(e.lngLat);
-    if (!e.lngLat) return;
-    if (e.lngLat.lng && e.lngLat.lat) {
-      setMarker({ longitude: e.lngLat.lng, latitude: e.lngLat.lat });
+  const getHighLight = async (lng: number, lat: number) => {
+    if (isProportionMethod) {
+      const { data } = await fetchInsideCircle(lng, lat, radius / 100);
+      setHighlight(data);
+      return;
+    }
+    if (!isProportionMethod) {
+      const { data } = await fetchCentroid(lng, lat, radius / 100);
+      setHighlight(data);
     }
   };
-  // const displayData = allData?.map((item: any) => {
-  //   const match = item.centroid.match(/-?\d+(\.\d+)? -?\d+(\.\d+)?/)
-  //   if (match) {
-  //     const [longitude, latitude] = match[0].split(' ').map(parseFloat)
-  //     const newObj = {
-  //       ...item,
-  //       centroid: {
-  //         longitude,
-  //         latitude
-  //       }
-  //     }
-  //     return newObj
-  //   }
-  // })
 
+  const getCircle = async (lng: number, lat: number) => {
+    const { data } = await fetchCircle(lng, lat, radius / 100);
+
+    setCircle(data);
+  };
+
+  useEffect(() => {
+    getHighLight(defaultMarker.longitude, defaultMarker.latitude);
+    getCircle(defaultMarker.longitude, defaultMarker.latitude);
+  }, []);
+
+  const handleMapClick = async (e: any) => {
+    getHighLight(e.lngLat.lng, e.lngLat.lat);
+    getCircle(e.lngLat.lng, e.lngLat.lat);
+  };
+
+  const dataHighlight = useMemo(() => {
+    try {
+      if (!highlight) return null;
+
+      const geojson = {
+        type: 'FeatureCollection',
+        features: highlight.map((item: { geometry: string }) => ({
+          type: 'Feature',
+          geometry: JSON.parse(item.geometry)
+        }))
+      };
+      return geojson;
+    } catch (error) {
+      console.error('Error parsing spatialobj:', error);
+      return null;
+    }
+  }, [highlight]);
+
+  const dataCircle = useMemo(() => {
+    try {
+      if (!circle) return null;
+      const geojson = {
+        geometry: JSON.parse(circle?.[0]?.circle),
+        type: 'Feature'
+      };
+      return geojson;
+    } catch (error) {
+      console.error('Error parsing spatialobj:', error);
+      return null;
+    }
+  }, [circle]);
+
+  const displayData = dataMap?.map((item: any) => {
+    const match = item.centroid.match(/-?\d+(\.\d+)? -?\d+(\.\d+)?/);
+    if (match) {
+      const [longitude, latitude] = match[0].split(' ').map(parseFloat);
+      const newObj = {
+        ...item,
+        centroid: {
+          longitude,
+          latitude
+        }
+      };
+      return newObj;
+    }
+  });
+  console.log(highlight);
   return (
-    <Map
-      initialViewState={{
-        latitude: 33.19790511065013,
-        longitude: -96.63958405272592,
-        zoom: 10
-      }}
-      ref={mapRef}
-      mapStyle='mapbox://styles/mapbox/light-v9'
-      mapboxAccessToken={process.env.REACT_APP_MAPBOX_TOKEN!}
-      interactiveLayerIds={['data']}
-      style={{ width: '100%', height: 1400 }}
-      onClick={(e) => handleMapClick(e)}
-    >
-      <Source
-        type='geojson'
-        // show up area of data
-        data={data as any}
+    <>
+      <Map
+        initialViewState={{
+          latitude: defaultMarker.latitude,
+          longitude: defaultMarker.longitude,
+          zoom: 10
+        }}
+        ref={mapRef}
+        mapStyle='mapbox://styles/mapbox/light-v9'
+        mapboxAccessToken={process.env.REACT_APP_MAPBOX_TOKEN!}
+        interactiveLayerIds={['data']}
+        style={{ width: '100%', height: 1400 }}
+        // remove the preventStyleDiffing prop
+        styleDiffing={false}
+        onClick={(e) => handleMapClick(e)}
       >
-        <Layer
-          {...dataLayer}
-          type='sky'
-          paint={{ 'sky-opacity': 0.5 }}
-        />
-        <div style={{ position: 'absolute', bottom: 200, left: 100 }}>
-          <ScaleControl
-            maxWidth={100}
-            unit={'metric'}
-          />
-        </div>
-
-        {/* Centroid */}
-        {/* {displayData?.map((item: any) => {
-          return (
-            <Marker
-              key={item.centroid.longitude}
-              longitude={item.centroid.longitude}
-              // latitude={JSON.parse(item?.centroid)?.coordinates?.[1]}
-              latitude={item.centroid.latitude}
-            >
-              <img
-                src={Pin}
-                height={10}
-                width={10}
-                alt='marker'
-              />
-            </Marker>
-          )
-        })} */}
         <Source
-          id='my-data'
           type='geojson'
-          data={circle}
+          // show up area of data
+          data={data as any}
         >
-          <Layer
-            id='point-90-hi'
-            type='fill'
-            paint={{
-              'fill-color': '#088',
-              'fill-opacity': 0.4,
-              'fill-outline-color': 'yellow'
-            }}
-          />
+          <div style={{ position: 'absolute', bottom: 200, left: 100 }}>
+            <ScaleControl
+              maxWidth={100}
+              unit={'metric'}
+            />
+          </div>
+
+          {/* Centroid */}
+          {displayData?.map((item: any) => {
+            return (
+              <Marker
+                key={item.centroid.longitude}
+                longitude={item.centroid.longitude}
+                // latitude={JSON.parse(item?.centroid)?.coordinates?.[1]}
+                latitude={item.centroid.latitude}
+              >
+                <img
+                  src={Pin}
+                  height={10}
+                  width={10}
+                  alt='marker'
+                />
+              </Marker>
+            );
+          })}
+          <Source
+            id='my-data'
+            type='geojson'
+            data={dataCircle as any}
+          >
+            <Layer
+              id='point-90-hi'
+              type='line'
+            />
+          </Source>
         </Source>
-      </Source>
-    </Map>
+
+        {isProportionMethod && (
+          <Source
+            id='my-data2'
+            type='geojson'
+            data={dataCircle as any}
+          >
+            <Layer
+              type='fill'
+              paint={{
+                'fill-color': 'yellow',
+                'fill-opacity': 0.8
+              }}
+            />
+          </Source>
+        )}
+        {!isProportionMethod && (
+          <Source
+            id='my-dat3'
+            type='geojson'
+            // show up area of data
+            data={dataHighlight as any}
+          >
+            <Layer {...(dataLayerHighLight as any)} />
+          </Source>
+        )}
+      </Map>
+      <div className='container'>
+        <Results
+          isProportionMethod={isProportionMethod}
+          setIsProportionMethod={setIsProportionMethod}
+          data={highlight}
+        />
+      </div>
+    </>
   );
 };
 

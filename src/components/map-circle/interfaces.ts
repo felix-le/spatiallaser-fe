@@ -14,8 +14,9 @@ interface IDataPoint {
 
 interface IMapDataContext {
   dataMap: IDataPoint[];
-  fetchCentroid: (lng: number, lat: number, radius: number) => void;
-  fetchInsideCircle: (lng: number, lat: number, radius: number) => void;
+  fetchCentroid: (lng: number, lat: number, radius: number) => any;
+  fetchInsideCircle: (lng: number, lat: number, radius: number) => any;
+  fetchCircle: (lng: number, lat: number, radius: number) => any;
 }
 
 export type { ISpatialObject, IDataPoint, IMapDataContext };

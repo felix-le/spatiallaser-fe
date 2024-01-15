@@ -13,7 +13,16 @@ export const dataLayer: LayerProps = {
   id: 'data',
   type: 'fill',
   paint: {
-    'fill-color': '#0080ff', // blue color fill
+    'fill-color': 'gray', // blue color fill
+    'fill-opacity': 0.5
+  }
+};
+
+export const dataLayerHighLight: LayerProps = {
+  id: 'data',
+  type: 'fill',
+  paint: {
+    'fill-color': '#ffd900', // blue color fill
     'fill-opacity': 0.5
   }
 };
