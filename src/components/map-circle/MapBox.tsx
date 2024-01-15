@@ -127,6 +127,7 @@ const Mapbox: React.FC = () => {
       };
       return newObj;
     }
+    return null; // Add a default return value (null in this case)
   });
   return (
     <div className='h-full'>
